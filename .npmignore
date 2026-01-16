@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment and config
+.env
+.env.example
+
+# Examples (not needed in published package)
+examples/
+
+# Development files
+*.log
+.DS_Store
+.vscode/
+.git/
+.gitignore
+
+# Runtime directories
+downloads/
+backups/
+rollback/
+
+# CI/CD (not needed in published package)
+.github/

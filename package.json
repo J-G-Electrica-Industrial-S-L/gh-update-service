@@ -1,0 +1,40 @@
+{
+  "name": "@jg-electrica/gh-update-service",
+  "version": "1.0.0",
+  "minimumVersionRequired": "0.0.1",
+  "description": "GitHub releases-based update system for Node.js applications",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "github",
+    "releases",
+    "updates",
+    "auto-update",
+    "self-update",
+    "version-management",
+    "rollback",
+    "deployment"
+  ],
+  "author": "J.G. Eléctrica Industrial S.L.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/J-G-Electrica-Industrial-S-L/gh-update-service.git"
+  },
+  "bugs": {
+    "url": "https://github.com/J-G-Electrica-Industrial-S-L/gh-update-service/issues"
+  },
+  "homepage": "https://github.com/J-G-Electrica-Industrial-S-L/gh-update-service#readme",
+  "private": true,
+  "dependencies": {
+    "adm-zip": "^0.5.10"
+  },
+  "peerDependencies": {
+    "dotenv": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

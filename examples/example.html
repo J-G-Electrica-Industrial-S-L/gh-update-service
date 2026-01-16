@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+  <!--
+    GitHub Updater - Update Panel
+
+    Configuration:
+    By default, this panel will connect to the API on the same host as the page.
+
+    To customize the API URL, add this before the closing </head> tag:
+    <script>
+      window.UPDATE_API_PORT = 3001;        // Default: 3001
+      window.UPDATE_API_HOST = "localhost"; // Default: current hostname
+      window.UPDATE_API_PROTOCOL = "http:"; // Default: current protocol
+    </script>
+  -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GH Update Service Example</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: #f5f5f5;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin-bottom: 10px;
+        color: #333;
+      }
+
+      .version {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 30px;
+      }
+
+      .status {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .status.info {
+        background: #e3f2fd;
+        color: #1976d2;
+        border: 1px solid #90caf9;
+      }
+
+      .status.success {
+        background: #e8f5e9;
+        color: #388e3c;
+        border: 1px solid #81c784;
+      }
+
+      .status.warning {
+        background: #fff3e0;
+        color: #f57c00;
+        border: 1px solid #ffb74d;
+      }
+
+      .status.error {
+        background: #ffebee;
+        color: #d32f2f;
+        border: 1px solid #e57373;
+      }
+
+      .update-info {
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .update-info h3 {
+        font-size: 18px;
+        margin-bottom: 15px;
+        color: #333;
+      }
+
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+      }
+
+      .info-row:last-child {
+        border-bottom: none;
+      }
+
+      .info-label {
+        font-weight: 600;
+        color: #666;
+      }
+
+      .info-value {
+        color: #333;
+      }
+
+      .release-notes {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 2px solid #eee;
+      }
+
+      .release-notes h4 {
+        font-size: 14px;
+        margin-bottom: 8px;
+        color: #666;
+      }
+
+      .release-notes pre {
+        background: white;
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        white-space: pre-wrap;
+        color: #333;
+      }
+
+      button {
+        background: #2196f3;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        transition: background 0.3s;
+      }
+
+      button:hover {
+        background: #1976d2;
+      }
+
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+
+      button.success {
+        background: #4caf50;
+      }
+
+      button.success:hover {
+        background: #388e3c;
+      }
+
+      button.warning {
+        background: #ff9800;
+      }
+
+      button.warning:hover {
+        background: #f57c00;
+      }
+
+      .loading {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Application Updater</h1>
+      <div class="version">
+        Current Version: <span id="currentVersion">Loading...</span>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div id="updateInfo" class="update-info">
+        <h3>Update Available</h3>
+        <div class="info-row">
+          <span class="info-label">New Version:</span>
+          <span class="info-value" id="newVersion">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Release:</span>
+          <span class="info-value" id="releaseName">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Published:</span>
+          <span class="info-value" id="publishedDate">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Downloaded:</span>
+          <span class="info-value" id="downloadStatus">-</span>
+        </div>
+
+        <div
+          class="release-notes"
+          id="releaseNotesContainer"
+          style="display: none"
+        >
+          <h4>Release Notes</h4>
+          <pre id="releaseNotes"></pre>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="checkBtn" onclick="checkForUpdates()">
+          Check for Updates
+        </button>
+        <button
+          id="downloadBtn"
+          onclick="downloadUpdate()"
+          style="display: none"
+        >
+          Download Update
+        </button>
+        <button
+          id="installBtn"
+          onclick="installUpdate()"
+          class="warning"
+          style="display: none"
+        >
+          Install Update
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Get API URL from environment or use current host
+      // You can configure this by adding: <script>window.UPDATE_API_PORT = 3001;<\/script> before this script
+      const API_PORT = window.UPDATE_API_PORT || 3001;
+      const API_HOST =
+        window.UPDATE_API_HOST || window.location.hostname || "localhost";
+      const API_PROTOCOL =
+        window.UPDATE_API_PROTOCOL || window.location.protocol || "http:";
+      const API_URL = `${API_PROTOCOL}//${API_HOST}:${API_PORT}`;
+
+      let updateData = null;
+
+      // Show status message
+      function showStatus(message, type = "info") {
+        const status = document.getElementById("status");
+        status.textContent = message;
+        status.className = `status ${type}`;
+        status.style.display = "block";
+      }
+
+      // Hide status message
+      function hideStatus() {
+        document.getElementById("status").style.display = "none";
+      }
+
+      // Set loading state for button
+      function setButtonLoading(buttonId, loading) {
+        const btn = document.getElementById(buttonId);
+        if (loading) {
+          btn.disabled = true;
+          btn.innerHTML += '<span class="loading"></span>';
+        } else {
+          btn.disabled = false;
+          const loadingSpan = btn.querySelector(".loading");
+          if (loadingSpan) loadingSpan.remove();
+        }
+      }
+
+      // Load current version on page load
+      async function loadCurrentVersion() {
+        try {
+          const response = await fetch(`${API_URL}/api/status`);
+          const data = await response.json();
+          document.getElementById("currentVersion").textContent = data.version;
+        } catch (error) {
+          document.getElementById("currentVersion").textContent = "Unknown";
+          showStatus("Cannot connect to update API. Is it running?", "error");
+        }
+      }
+
+      // Check for updates
+      async function checkForUpdates() {
+        hideStatus();
+        setButtonLoading("checkBtn", true);
+        document.getElementById("updateInfo").style.display = "none";
+        document.getElementById("downloadBtn").style.display = "none";
+        document.getElementById("installBtn").style.display = "none";
+
+        try {
+          const response = await fetch(`${API_URL}/api/update/check`);
+          const data = await response.json();
+          updateData = data;
+
+          if (data.error) {
+            showStatus(`Error: ${data.error}`, "error");
+            return;
+          }
+
+          if (!data.updateAvailable) {
+            showStatus("You are running the latest version!", "success");
+            return;
+          }
+
+          // Update available
+          document.getElementById("newVersion").textContent =
+            data.latestVersion;
+          document.getElementById("releaseName").textContent =
+            data.releaseName || "N/A";
+          document.getElementById("publishedDate").textContent = new Date(
+            data.publishedAt
+          ).toLocaleString();
+          document.getElementById("downloadStatus").textContent =
+            data.downloaded ? "✓ Yes" : "✗ No";
+
+          if (data.releaseNotes) {
+            document.getElementById("releaseNotes").textContent =
+              data.releaseNotes;
+            document.getElementById("releaseNotesContainer").style.display =
+              "block";
+          } else {
+            document.getElementById("releaseNotesContainer").style.display =
+              "none";
+          }
+
+          document.getElementById("updateInfo").style.display = "block";
+
+          if (data.downloaded) {
+            showStatus("Update is ready to install!", "warning");
+            document.getElementById("installBtn").style.display =
+              "inline-block";
+          } else {
+            showStatus("New update available!", "info");
+            document.getElementById("downloadBtn").style.display =
+              "inline-block";
+          }
+        } catch (error) {
+          showStatus(`Connection error: ${error.message}`, "error");
+        } finally {
+          setButtonLoading("checkBtn", false);
+        }
+      }
+
+      // Download update
+      async function downloadUpdate() {
+        hideStatus();
+        setButtonLoading("downloadBtn", true);
+        showStatus("Downloading update...", "info");
+
+        try {
+          const response = await fetch(`${API_URL}/api/update/download`, {
+            method: "POST",
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            showStatus("Download complete! Ready to install.", "success");
+            document.getElementById("downloadBtn").style.display = "none";
+            document.getElementById("installBtn").style.display =
+              "inline-block";
+            document.getElementById("downloadStatus").textContent = "✓ Yes";
+          } else {
+            showStatus(`Download failed: ${data.error}`, "error");
+          }
+        } catch (error) {
+          showStatus(`Download error: ${error.message}`, "error");
+        } finally {
+          setButtonLoading("downloadBtn", false);
+        }
+      }
+
+      // Install update
+      async function installUpdate() {
+        if (
+          !confirm(
+            "This will install the update and may restart the application. Continue?"
+          )
+        ) {
+          return;
+        }
+
+        hideStatus();
+        setButtonLoading("installBtn", true);
+        showStatus("Installing update... Please wait.", "warning");
+
+        try {
+          const response = await fetch(`${API_URL}/api/update/install`, {
+            method: "POST",
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            showStatus(
+              "Update installed successfully! Please restart the application.",
+              "success"
+            );
+            document.getElementById("installBtn").style.display = "none";
+
+            // Reload version
+            setTimeout(loadCurrentVersion, 1000);
+          } else {
+            showStatus(`Installation failed: ${data.error}`, "error");
+          }
+        } catch (error) {
+          showStatus(`Installation error: ${error.message}`, "error");
+        } finally {
+          setButtonLoading("installBtn", false);
+        }
+      }
+
+      // Load version on page load
+      loadCurrentVersion();
+    </script>
+  </body>
+</html>
