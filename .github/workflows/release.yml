@@ -61,9 +61,9 @@ jobs:
 
           # Add metadata comment if minimumVersionRequired is set
           if [ -n "${{ steps.package_version.outputs.minimumVersionRequired }}" ]; then
-            BODY="$BODY
+            BODY="${BODY}
 
-          <!-- UPGRADE_METADATA { \"minimumVersionRequired\": \"${{ steps.package_version.outputs.minimumVersionRequired }}\" } -->"
+          <!-- UPGRADE_METADATA {\\\"minimumVersionRequired\\\":\\\"${{ steps.package_version.outputs.minimumVersionRequired }}\\\"} -->"
           fi
 
           echo "body<<EOF" >> $GITHUB_OUTPUT
